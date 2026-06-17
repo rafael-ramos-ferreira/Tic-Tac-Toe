@@ -9,6 +9,7 @@ Project elaborated by Rafael Ferreira
 # Constants
 
 BOARD_SIZE = 3
+NUM_PLAYERS = 2
 
 # Board related functions
 
@@ -35,10 +36,165 @@ def board_to_str(board):
     return board_str
 
 def convert_coordinates(house): # converts from 1-based to 0-based
-    x  = house[0] - 1
+    x = house[0] - 1
     y = house[1] - 1
-    return x, y
+    return (x, y)
 
-def change_value(board, house, value):
-    x, y = convert_coordinates(house)
-    board[x][y] = value
+def change_value(board, line, column, value):
+    board[line][column] = value
+    return None
+
+def score_init():
+    player_score_board = {"V1": 0, "V2": 0, "V3": 0, "H1": 0, 
+                   "H2": 0, "H3": 0, "CLR": 0, "CRL": 0}
+    return player_score_board
+
+def add_score(player_score_board, line, column):
+    match line:
+        case 0:
+            if column == 0:
+                player_score_board["V1"] += 1
+                player_score_board["H1"] += 1
+                player_score_board["CLR"] += 1
+            elif column == 1:
+                player_score_board["V2"] += 1
+                player_score_board["H1"] += 1
+            elif column == 2:
+                player_score_board["V3"] += 1
+                player_score_board["H1"] += 1
+                player_score_board["CRL"] += 1
+        case 1:
+            if column == 0:
+                player_score_board["V1"] += 1
+                player_score_board["H2"] += 1
+            elif column == 1:
+                player_score_board["V2"] += 1
+                player_score_board["H2"] += 1
+                player_score_board["CRL"] += 1
+                player_score_board["CLR"] += 1
+            elif column == 2:
+                player_score_board["V3"] += 1
+                player_score_board["H2"] += 1
+        case 2:
+            if column == 0:
+                player_score_board["V1"] += 1
+                player_score_board["H3"] += 1
+                player_score_board["CRL"] += 1
+            elif column == 1:
+                player_score_board["V2"] += 1
+                player_score_board["H3"] += 1
+            elif column == 2:
+                player_score_board["V3"] += 1
+                player_score_board["H3"] += 1
+                player_score_board["CLR"] += 1
+    return None
+
+def check_victory(scores):
+    for key in scores:
+        if scores[key] == 3:
+            return 1
+    return 0
+
+def get_house(board, line, column):
+    return board[line][column]
+
+def check_occupied(board, line, column):
+    return not get_house(board, line, column).isspace()
+
+def player_init():
+    player = {"player_score": score_init(), "player_name": ""}
+    return player
+
+def player_name_change(player, name_str):
+    player["player_name"] = name_str
+    return None
+
+def check_valid_house(line, column):
+    if line >= BOARD_SIZE or column >= BOARD_SIZE:
+        return False
+    return True
+
+def get_play(player):
+    play_input = str(input(f"{player["player_name"]} insert your play (or q to forsake) "))
+    input_filtered = play_input.split()
+    if input_filtered[0] == "q":
+        return (-1, 0)
+    elif input_filtered[0] != "p":
+        raise ValueError("Invalid arguments")
+    else:
+        if (not input_filtered[1].isdigit() 
+            or not input_filtered[2].isdigit()):
+            raise ValueError("Invalid arguments")
+        line, column = int(input_filtered[1]), int(input_filtered[2])
+        return (line, column)
+
+def check_forsake(house):
+    if house[0] == -1:
+        return True
+    return False
+
+def give_victory(player):
+    print(f"Player {player["player_name"]} has won!")
+    return None
+
+def print_board(board):
+    print(board_to_str(board))
+    return None
+
+def give_tie():
+    print("No player has become victorious!")
+    return None
+
+def main():
+    players = [player_init(), player_init()]
+    play_counter = 0
+    for i in range(0, NUM_PLAYERS):
+        name = str(input(f"What's the name of player {i}? "))
+        player_name_change(players[i], name)
+    board = board_init()
+    
+    while True:
+        if play_counter >= (BOARD_SIZE ** 2):
+            give_tie()
+            break
+        print_board(board)
+        player_index = (play_counter) % 2
+        play = get_play(players[player_index])
+        if check_forsake(play):
+            give_victory(players[(play_counter + 1) % 2])
+            break
+        line, column = convert_coordinates(play)
+        if check_occupied(board, line, column) or not check_valid_house(line, column):
+            play_counter += 1
+            raise ValueError("Inadequate play!")
+        change_value(board, line, column, player_index)
+        add_score(players[player_index]["player_score"], line, column)
+        #print(players[player_index]["player_score"])
+        if check_victory(players[player_index]["player_score"]):
+            give_victory(players[player_index])
+            break
+        play_counter += 1
+    return None
+
+main()
+
+# board = board_init()
+# print(board_to_str(board))
+# line, column = convert_coordinates((1,1))
+# change_value(board, line, column, 'B')
+# scores = score_init()
+# add_score(line, column, scores)
+# vict = check_victory(scores)
+# print(vict)
+# add_score(line, column, scores)
+# add_score(line, column, scores)
+# vict = check_victory(scores)
+# print(vict)
+# print(scores)
+# print(board_to_str(board))
+# print('\n \t')
+# print(check_occupied(board, 1, 2))
+# print(get_house(board, 0, 0))
+
+
+
