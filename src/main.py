@@ -10,14 +10,16 @@ Project elaborated by Rafael Ferreira
 
 BOARD_SIZE = 3
 NUM_PLAYERS = 2
+ICONS = {1: '@', 2: '£', 3: 'X', 4: 'O', 5: '%',
+         6: '?', 7: '+', 8: '§', 9: '#', 10: '$'}
 
 # Board related functions
 
-def board_init():
+def board_init() -> list:
     board = [[" " for x in range(0,BOARD_SIZE)] for y in range(0, BOARD_SIZE)]
     return board
 
-def board_to_str(board):
+def board_to_str(board: list) -> str:
     boarders = f"+{"".join(['-' for x in range(0, BOARD_SIZE * 4 - 3)])}+"
     board_str = ""
     board_str += boarders + "\n"
@@ -35,21 +37,21 @@ def board_to_str(board):
     board_str += "\n" + boarders
     return board_str
 
-def convert_coordinates(house): # converts from 1-based to 0-based
+def convert_coordinates(house: tuple) -> tuple: # converts from 1-based to 0-based
     x = house[0] - 1
     y = house[1] - 1
     return (x, y)
 
-def change_value(board, line, column, value):
-    board[line][column] = value
+def change_value(board: list, line: int, column: int, value: any) -> None:
+    board[line][column] = str(value)
     return None
 
-def score_init():
+def score_init() -> dict:
     player_score_board = {"V1": 0, "V2": 0, "V3": 0, "H1": 0, 
                    "H2": 0, "H3": 0, "CLR": 0, "CRL": 0}
     return player_score_board
 
-def add_score(player_score_board, line, column):
+def add_score(player_score_board: dict, line: int, column: int) -> None:
     match line:
         case 0:
             if column == 0:
@@ -89,34 +91,37 @@ def add_score(player_score_board, line, column):
                 player_score_board["CLR"] += 1
     return None
 
-def check_victory(scores):
+def check_victory(scores: dict) -> bool:
     for key in scores:
-        if scores[key] == 3:
-            return 1
-    return 0
+        if scores[key] == BOARD_SIZE:
+            return True
+    return False
 
-def get_house(board, line, column):
+def get_house(board: list, line: int, column: int) -> str:
     return board[line][column]
 
-def check_occupied(board, line, column):
+def check_occupied(board: list, line: int, column: int) -> bool:
     return not get_house(board, line, column).isspace()
 
-def player_init():
-    player = {"player_score": score_init(), "player_name": ""}
+def player_init() -> dict:
+    player = {"player_score": score_init(), "player_name": "",
+              "icon": 'X'}
     return player
 
-def player_name_change(player, name_str):
+def player_name_change(player: dict, name_str: str) -> None:
     player["player_name"] = name_str
     return None
 
-def check_valid_house(line, column):
+def check_valid_house(line: int, column: int) -> bool:
     if line >= BOARD_SIZE or column >= BOARD_SIZE:
         return False
     return True
 
-def get_play(player):
+def get_play(player: dict) -> tuple:
     play_input = str(input(f"{player["player_name"]} insert your play (or q to forsake) "))
     input_filtered = play_input.split()
+    if (len(input_filtered) > 3):
+        raise ValueError("Invalid arguments")
     if input_filtered[0] == "q":
         return (-1, 0)
     elif input_filtered[0] != "p":
@@ -128,29 +133,41 @@ def get_play(player):
         line, column = int(input_filtered[1]), int(input_filtered[2])
         return (line, column)
 
-def check_forsake(house):
+def check_forsake(house: tuple) -> bool:
     if house[0] == -1:
         return True
     return False
 
-def give_victory(player):
+def choose_icon(player: dict) -> None:
+    print(ICONS)
+    icon = int(input("What's your desired icon? (index) "))
+    icon_token = ICONS.get(icon)
+    player["icon"] = icon_token
+    return None
+
+
+def give_victory(player: dict) -> None:
     print(f"Player {player["player_name"]} has won!")
     return None
 
-def print_board(board):
+def print_board(board: list) -> None:
     print(board_to_str(board))
     return None
 
-def give_tie():
+def give_tie() -> None:
     print("No player has become victorious!")
     return None
 
-def main():
+def get_icon(player: dict) -> chr:
+    return player["icon"]
+
+def main() -> None:
     players = [player_init(), player_init()]
     play_counter = 0
     for i in range(0, NUM_PLAYERS):
         name = str(input(f"What's the name of player {i}? "))
         player_name_change(players[i], name)
+        choose_icon(players[i])
     board = board_init()
     
     while True:
@@ -158,43 +175,24 @@ def main():
             give_tie()
             break
         print_board(board)
-        player_index = (play_counter) % 2
+        player_index = (play_counter) % NUM_PLAYERS
         play = get_play(players[player_index])
         if check_forsake(play):
-            give_victory(players[(play_counter + 1) % 2])
+            give_victory(players[(play_counter + 1) % NUM_PLAYERS])
             break
         line, column = convert_coordinates(play)
         if check_occupied(board, line, column) or not check_valid_house(line, column):
             play_counter += 1
             raise ValueError("Inadequate play!")
-        change_value(board, line, column, player_index)
+        change_value(board, line, column, get_icon(players[player_index]))
         add_score(players[player_index]["player_score"], line, column)
-        #print(players[player_index]["player_score"])
         if check_victory(players[player_index]["player_score"]):
+            print_board(board)
+            print('\n\n')
             give_victory(players[player_index])
+            print('\n\n')
             break
         play_counter += 1
     return None
 
 main()
-
-# board = board_init()
-# print(board_to_str(board))
-# line, column = convert_coordinates((1,1))
-# change_value(board, line, column, 'B')
-# scores = score_init()
-# add_score(line, column, scores)
-# vict = check_victory(scores)
-# print(vict)
-# add_score(line, column, scores)
-# add_score(line, column, scores)
-# vict = check_victory(scores)
-# print(vict)
-# print(scores)
-# print(board_to_str(board))
-# print('\n \t')
-# print(check_occupied(board, 1, 2))
-# print(get_house(board, 0, 0))
-
-
-
