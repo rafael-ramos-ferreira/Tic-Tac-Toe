@@ -80,53 +80,30 @@ def print_board(board: list) -> None:
 
 # Score related functions
 
-def score_init() -> dict:
-    """Initializes the player's score"""
-    player_score_board = {"V1": 0, "V2": 0, "V3": 0, "H1": 0, 
-                   "H2": 0, "H3": 0, "CLR": 0, "CRL": 0}
-    return player_score_board
+def score_init(size: int) -> dict:
+    """Initializes the player's score
+
+        - This system works by adding in each play the value of the play to
+        the corresponding player, and when the value reaches the size of the
+        board, the victory is achieved.
+    """
+    scores = {}
+    for i in range(size):
+        scores[f"H{i}"] = 0
+        scores[f"V{i}"] = 0
+    scores["DLR"] = 0
+    scores["DRL"] = 0
+    return scores
 
 
-def add_score(player_score_board: dict, line: int, column: int) -> None:
+def add_score(scores: dict, line: int, column: int, size: int) -> None:
     """Tests the position of selected house and add corresponding score"""
-    match line:
-        case 0:
-            if column == 0:
-                player_score_board["V1"] += 1
-                player_score_board["H1"] += 1
-                player_score_board["CLR"] += 1
-            elif column == 1:
-                player_score_board["V2"] += 1
-                player_score_board["H1"] += 1
-            elif column == 2:
-                player_score_board["V3"] += 1
-                player_score_board["H1"] += 1
-                player_score_board["CRL"] += 1
-        case 1:
-            if column == 0:
-                player_score_board["V1"] += 1
-                player_score_board["H2"] += 1
-            elif column == 1:
-                player_score_board["V2"] += 1
-                player_score_board["H2"] += 1
-                player_score_board["CRL"] += 1
-                player_score_board["CLR"] += 1
-            elif column == 2:
-                player_score_board["V3"] += 1
-                player_score_board["H2"] += 1
-        case 2:
-            if column == 0:
-                player_score_board["V1"] += 1
-                player_score_board["H3"] += 1
-                player_score_board["CRL"] += 1
-            elif column == 1:
-                player_score_board["V2"] += 1
-                player_score_board["H3"] += 1
-            elif column == 2:
-                player_score_board["V3"] += 1
-                player_score_board["H3"] += 1
-                player_score_board["CLR"] += 1
-    return None
+    scores[f"H{line}"] += 1
+    scores[f"V{column}"] += 1
+    if line == column:
+        scores["DLR"] += 1          # Diagonal Left-to-Right
+    if line + column == size - 1:
+        scores["DRL"] += 1          # Diagonal Right-to-Left
 
 
 # End-game related functions
