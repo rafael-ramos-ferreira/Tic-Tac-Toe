@@ -10,9 +10,9 @@ Project elaborated by Rafael Ferreira
 
 BOARD_SIZE = 3
 NUM_PLAYERS = 2
-ICONS = {1: '@', 2: '£', 3: 'X', 4: 'O', 5: '%',
+ICONS = {1: 'X', 2: 'O', 3: '@', 4: '£', 5: '%',
          6: '?', 7: '+', 8: '§', 9: '#', 10: '$'}
-
+NUM_ICONS = 10
 # Board related functions
 
 def board_init() -> list:
@@ -60,13 +60,14 @@ def get_house(board: list, line: int, column: int) -> str:
 
 
 def check_occupied(board: list, line: int, column: int) -> bool:
-    """Returns if a specified board field is filled"""
+    """Returns True if a specified board field is filled"""
     return not get_house(board, line, column).isspace()
 
 
 def check_valid_house(line: int, column: int) -> bool:
     """Verifies if a board field is existent"""
-    if line >= BOARD_SIZE or column >= BOARD_SIZE:
+    if (line >= BOARD_SIZE or column >= BOARD_SIZE or 
+        line < 0 or column < 0):
         return False
     return True
 
@@ -161,7 +162,7 @@ def give_tie() -> None:
 
 def player_init() -> dict:
     """Initializes the player dictionary"""
-    player = {"player_score": score_init(), "player_name": "",
+    player = {"player_score": score_init(BOARD_SIZE), "player_name": "",
               "icon": 'X'}
     return player
 
@@ -175,7 +176,16 @@ def player_name_change(player: dict, name_str: str) -> None:
 def choose_icon(player: dict) -> None:
     """Allows the player to choose an icon"""
     print(ICONS)
-    icon = int(input("What's your desired icon? (index) "))
+    while True:
+        try:
+            icon = int(input("What's your desired icon? (index) "))
+        except ValueError:
+            print("Incorrect argument! Choose again!")
+            continue
+        if (icon > NUM_ICONS or icon < 1):
+            print("Incorrect argument! Choose again!")
+            continue
+        break
     icon_token = ICONS.get(icon)
     player["icon"] = icon_token
     return None
@@ -191,18 +201,25 @@ def get_name(player: dict) -> str:
     return player["player_name"]
 
 
+def get_scores(player: dict) -> dict:
+    """Returns the selected player's scoreboard"""
+    return player["player_score"]
+
+
 # Play related functions
 
 def get_play(player: dict) -> tuple:
     """Filters the input given in a play"""
-    play_input = str(input(f"{get_name(player)} \
-                           insert your play (or q to forsake) "))
+    play_input = ( 
+        str(input(f"{get_name(player)} insert your play (or q to forsake) "))
+    )
     input_filtered = play_input.split()
-    if (len(input_filtered) > 3):
+    arguments = len(input_filtered)
+    if (arguments < 1 or arguments > 3):
         raise ValueError("Invalid arguments")
     if input_filtered[0] == "q":
-        return (-1, 0)  # flag if the player chose to quit
-    elif input_filtered[0] != "p":
+        return (-1, 0)              # flag if the player chose to quit
+    elif (input_filtered[0] != "p" or arguments != 3):
         raise ValueError("Invalid arguments")
     else:
         if (not input_filtered[1].isdigit()
@@ -216,7 +233,7 @@ def get_play(player: dict) -> tuple:
 
 def main() -> None:
     """Runs the game"""
-    players = [player_init(), player_init()]
+    players = [player_init() for _ in range(0, NUM_PLAYERS)]
     play_counter = 0
     for i in range(0, NUM_PLAYERS):
         name = str(input(f"What's the name of player {i}? "))
@@ -230,17 +247,25 @@ def main() -> None:
             break
         print_board(board)
         player_index = (play_counter) % NUM_PLAYERS
-        play = get_play(players[player_index])
-        if check_forsake(play):
-            give_victory(players[(play_counter + 1) % NUM_PLAYERS])
+        while True:
+            try:
+                play = get_play(players[player_index])
+            except ValueError as error:
+                print(f"Error: {error}. Try again!")
+                continue
+
+            if check_forsake(play):
+                give_victory(players[(play_counter + 1) % NUM_PLAYERS])
+                break
+            line, column = convert_coordinates(play)
+            if not check_valid_house(line, column) or check_occupied(board, line, column):
+                print("Inadequate play! Try again!")
+                continue
             break
-        line, column = convert_coordinates(play)
-        if check_occupied(board, line, column) or not check_valid_house(line, column):
-            play_counter += 1
-            raise ValueError("Inadequate play!")
+        
         change_value(board, line, column, get_icon(players[player_index]))
-        add_score(players[player_index]["player_score"], line, column)
-        if check_victory(players[player_index]["player_score"]):
+        add_score(get_scores(players[player_index]), line, column, BOARD_SIZE)
+        if check_victory(get_scores(players[player_index])):
             print_board(board)
             print('\n\n')
             give_victory(players[player_index])
@@ -249,6 +274,7 @@ def main() -> None:
         play_counter += 1
     return None
 
-# Start play call
+# Start play call (if not imported)
 
-main()
+if __name__ == "__main__":
+    main()
