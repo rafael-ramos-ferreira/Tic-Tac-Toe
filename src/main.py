@@ -233,7 +233,7 @@ def main() -> None:
 
             if check_forsake(play):
                 give_victory(players[(play_counter + 1) % NUM_PLAYERS])
-                break
+                return None
             line, column = convert_coordinates(play)
             if not check_valid_house(line, column) or check_occupied(board, line, column):
                 print("Inadequate play! Try again!")
